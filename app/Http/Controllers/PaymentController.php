@@ -30,24 +30,6 @@ class PaymentController extends Controller
 
     public function checkout_order(Request $request){
 
-
-        $nonceFromTheClient = $request->input('nonce');
-
-        $gateway = new \Braintree\Gateway([
-            'environment' => env('BRAINTREE_ENVIRONMENT'),
-            'merchantId' => env("BRAINTREE_MERCHANT_ID"),
-            'publicKey' => env("BRAINTREE_PUBLIC_KEY"),
-            'privateKey' => env("BRAINTREE_PRIVATE_KEY")
-        ]);
-
-        $result = $gateway->transaction()->sale([
-            'amount' => $request->price,
-            'paymentMethodNonce' => $nonceFromTheClient,
-            'options' => [
-                'submitForSettlement' => True
-            ]
-        ]);
-
         $valid = Validator::make($request->all(),[
             'customer_name' => 'required',
             'price' => 'required',
@@ -73,7 +55,24 @@ class PaymentController extends Controller
                 'privateKey' => env("BRAINTREE_PRIVATE_KEY")
             ]);
 
-            return $nonceFromTheClient;
+            $user = $gateway->customer()->create([
+                'firstName' => 'Mike',
+                'lastName' => 'Jones',
+                'company' => 'Jones Co.',
+                'email' => 'mike.jones@example.com',
+                'phone' => '281.330.8004',
+                'fax' => '419.555.1235',
+                'website' => 'http://example.com'
+            ]);
+        
+
+            $paymentMethod = $gateway->paymentMethod()->create([
+                'customerId' => $user->customer->id,
+                'paymentMethodNonce' => $nonceFromTheClient
+            ]);
+
+            // Need to check payment method and currency
+
 
             $result = $gateway->transaction()->sale([
                 'amount' => $request->price,
